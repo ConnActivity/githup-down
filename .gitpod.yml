@@ -1,0 +1,43 @@
+image:
+  file: .gitpod.Dockerfile
+
+ports:
+  # Webserver
+  - port: 8080
+    onOpen: notify
+    visibility: public
+  # MariaDB
+  - port: 3306
+    onOpen: notify
+    visibility: public
+github:
+  prebuilds:
+    # enable for the default branch (defaults to true)
+    master: true
+    # enable for all branches in this repo (defaults to false)
+    branches: false
+    # enable for pull requests coming from this repo (defaults to true)
+    pullRequests: true
+    # enable for pull requests coming from forks (defaults to false)
+    pullRequestsFromForks: false
+    # add a check to pull requests (defaults to true)
+    addCheck: true
+    # add a "Review in Gitpod" button as a comment to pull requests (defaults to false)
+    addComment: false
+    # add a "Review in Gitpod" button to the pull request's description (defaults to false)
+    addBadge: false
+
+gitConfig:
+  alias.st: status
+  alias.pr: pull --rebase
+
+vscode:
+  extensions:
+    # Enable PHP debug extension
+    - felixfbecker.php-debug
+    - eamodio.gitlens
+
+tasks:
+  - name: Install Rust Toolchain
+    command: |
+      echo "The author of this PR was too lazy. He will probably do this later, depending on whether we actually use Gitpod."

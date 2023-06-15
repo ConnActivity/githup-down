@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Higher Lower Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff4da6, 0 0 30px #ff4da6, 0 0 40px #ff4da6;
+            animation: breathing 0.6s ease-in-out infinite;
+        }
+
+        .game-button {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .game-button:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes breathing {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600">
+<div class="container mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold my-8 text-center text-white glow-text">Higher Lower Game</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Github Stars</h2>
+            <p class="text-white">Guess which repository has more stars.</p>
+            <button class="game-button bg-white text-purple-600 px-6 py-2 rounded mt-4 font-bold"
+                    onclick="startGithubStarsGame()">Play Now
+            </button>
+        </div>
+
+        <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Stackoverflow Likes</h2>
+            <p class="text-white">Guess which post has more up-votes.</p>
+            <button class="game-button bg-white text-purple-600 px-6 py-2 rounded mt-4 font-bold"
+                    onclick="startStackoverflowLikesGame()">Play Now
+            </button>
+        </div>
+    </div>
+
+    <h2 class="text-2xl font-semibold my-8 text-center text-white glow-text">Leaderboards</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white rounded-lg p-6 shadow-lg">
+            <h3 class="text-xl font-semibold mb-4">Github Stars Leaderboard</h3>
+            <table class="table-auto w-full">
+                <thead>
+                <tr>
+                    <th class="px-4 py-2">Name</th>
+                    <th class="px-4 py-2">Streak</th>
+                </tr>
+                </thead>
+                <tbody id="githubStarsLeaderboard">
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="bg-white rounded-lg p-6 shadow-lg">
+            <h3 class="text-xl font-semibold mb-4">Stackoverflow up-votes Leaderboard</h3>
+            <table class="table-auto w-full">
+                <thead>
+                <tr>
+                    <th class="px-4 py-2">Name</th>
+                    <th class="px-4 py-2">Streak</th>
+                </tr>
+                </thead>
+                <tbody id="stackoverflowLikesLeaderboard">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function startGithubStarsGame() {
+        // Redirect to the Github Stars game page
+        window.location.href = "/github-star-game";
+    }
+
+    function startStackoverflowLikesGame() {
+        // Redirect to the Stackoverflow Likes game page
+        window.location.href = "/stackoverflow-upvote-game";
+    }
+
+    // Sample data, replace with API calls to fetch leaderboard data
+    const githubStarsLeaderboardData = {{ github_leaderboard }};
+
+    const stackoverflowLikesLeaderboardData = {{ stackoverflow_leaderboard }};
+
+    function displayLeaderboards() {
+        const githubStarsList = document.getElementById('githubStarsLeaderboard');
+        const stackoverflowLikesList = document.getElementById('stackoverflowLikesLeaderboard');
+
+        githubStarsLeaderboardData.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'text-center';
+            const name = document.createElement('td');
+            const streak = document.createElement('td');
+            name.textContent = item.name;
+            streak.textContent = item.streak;
+            row.appendChild(name);
+            row.appendChild(streak);
+            githubStarsList.appendChild(row);
+        });
+
+        stackoverflowLikesLeaderboardData.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'text-center';
+            const name = document.createElement('td');
+            const streak = document.createElement('td');
+            name.textContent = item.name;
+            streak.textContent = item.streak;
+            row.appendChild(name);
+            row.appendChild(streak);
+            stackoverflowLikesList.appendChild(row);
+        });
+    }
+
+    // Call the displayLeaderboards function to render the leaderboards
+    displayLeaderboards();
+</script>
+</body>
+</html>

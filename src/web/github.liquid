@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Github Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: linear-gradient(to right, #373B44, #4286f4);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff4da6, 0 0 30px #ff4da6, 0 0 40px #ff4da6;
+            animation: breathing 6s ease-in-out infinite;
+        }
+
+        .game-button {
+            transition: transform 0.2s ease-in-out;
+            border: none;
+            outline: none;
+            background-color: #6D28D9;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            transition-duration: 0.4s;
+            cursor: pointer;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+        }
+
+        .game-button:hover {
+            background-color: #4C1D95;
+            color: white;
+        }
+
+        @keyframes breathing {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .repo-container {
+            transition: all 0.5s ease-in-out;
+            opacity: 1;
+        }
+
+        .repo-container.hide-left {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        .repo-container.hide-right {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        .overlay {
+            position: absolute;
+            z-index: 2;
+            backdrop-filter: blur(5px);
+            top: 67%;
+            left: 39%;
+        }
+
+        .modal {
+            z-index: 3;
+        }
+
+        .main-menu-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            background-color: #ff4da6;
+        }
+
+        .main-menu-button:hover {
+            background-color: #ffffff;
+            color: #6B21A8;
+        }
+
+
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600">
+
+<div class="container mx-auto px-4 py-12 relative">
+    <div class="container mx-auto px-4 py-12 relative">
+        <button id="main-menu"
+                class="game-button absolute top-0 left-0 mt-2 ml-2 text-white text-xl py-2 px-4 rounded-lg"
+                onclick="returnToMainMenu()">Main Menu
+        </button>
+        <div class="absolute top-0 right-0 mt-4 mr-4 text-white text-2xl">
+            <span id="current-score">0</span> Points
+        </div>
+        <img src="https://github.githubassets.com/images/modules/logos_page/Octocat.png" alt="GitHub Octocat Logo"
+             class="absolute top-0 right-0 opacity-10 w-32 md:w-64" style="z-index: -1;">
+        <h1 class="text-4xl font-bold my-8 text-center text-white glow-text">Github Game</h1>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Known repo -->
+        <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center repo-container"
+             id="left-container">
+            <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold mb-4 text-white" id="left-title">{{ left.name }}</h2>
+                <div class="relative">
+                    <img src="{{ left.image_url }}" alt="Repo Image" class="h-64 object-cover mb-4 rounded-lg"
+                         id="left-image">
+                    <div class="overlay" id="left-overlay" style="width: 60%; height: 16%;"></div>
+                </div>
+                <p class="mb-4 text-white" id="left-description">{{ left.description }}</p>
+                <!-- Known star count -->
+                <div class="bg-white px-3 py-1 rounded-lg text-purple-600">
+                    <span class="text-xl font-semibold text-purple-600"
+                          id="left-count">{{ left.stargazers_count }}</span> Stars
+                </div>
+            </div>
+        </div>
+        <!-- Repo to be guessed -->
+        <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center repo-container"
+             id="right-container">
+            <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold mb-4 text-white" id="right-title">{{ right.name }}</h2>
+                <div class="relative">
+                    <img src="{{ right.image_url }}" alt="Repo Image" class="h-64 object-cover mb-4 rounded-lg"
+                         id="right-image">
+                    <div class="overlay" id="left-overlay" style="width: 60%; height: 16%;"></div>
+                </div>
+                <p class="mb-4 text-white" id="right-description">{{ right.description }}</p>
+                <!-- Higher/Lower buttons -->
+                <div class="flex space-x-4">
+                    <button class="game-button bg-white text-purple-600 px-6 py-2 rounded font-bold"
+                            onclick="evaluateVote('higher')">Higher
+                    </button>
+                    <button class="game-button bg-white text-purple-600 px-6 py-2 rounded font-bold"
+                            onclick="evaluateVote('lower')">Lower
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End of Game Overlay -->
+<div class="modal fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden" id="modal">
+    <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg p-8 w-11/12 md:w-2/5 relative">
+            <button id="close-modal"
+                    class="absolute top-0 right-0 mt-2 mr-2 bg-purple-600 text-white px-2 py-1 rounded font-bold">X
+            </button>
+            <h2 class="text-xl font-bold mb-4">Incorrect! Your score has been reset.</h2>
+            <p class="mb-4">Enter your name to submit your score:</p>
+            <p id="final_score"></p>
+            <input id="name" type="text" name="name" placeholder="Your name"
+                   class="border-2 border-gray-300 rounded w-full py-2 px-3 mb-4" required>
+            <button id="submit" class="bg-purple-600 text-white px-6 py-2 rounded font-bold">Submit</button>
+
+        </div>
+    </div>
+</div>
+
+<script>
+
+    let score = 0;
+    let right_stars = parseInt("{{ right.stargazers_count }}");
+
+    class RepoQueue {
+        constructor() {
+            this.queue = [];
+        }
+
+        enqueue(repo) {
+            this.queue.push(repo);
+        }
+
+        dequeue() {
+            return this.queue.shift();
+        }
+
+        peek() {
+            return this.queue[0];
+        }
+
+        isEmpty() {
+            return this.queue.length === 0;
+        }
+
+        size() {
+            return this.queue.length;
+        }
+    }
+
+    const repoQueue = new RepoQueue();
+
+    // Fetch return a repo from the queue and fill it with a new one
+    function getRepo() {
+        if (repoQueue.size() <= 3) {
+            fillQueue();
+        }
+        return repoQueue.dequeue();
+    }
+
+    // Fill the queue with 10 new repositories
+    function fillQueue(count = 10) {
+        fetchRandomRepo(count).then(data => {
+            data.forEach(repo => {
+                repoQueue.enqueue(repo);
+            });
+        });
+    }
+
+
+    // Fetch a random GitHub repository
+    async function fetchRandomRepo(count = 1) {
+        let list = [];
+        await fetch("/random-github-repos?count=" + count)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(repo => {
+                    list.push(repo);
+                });
+            });
+        return list;
+    }
+
+    // Update the UI with new repositories
+    function updateUI(left, right) {
+        animateSwitch(left.stargazers_count < right.stargazers_count ? 'left' : 'right', () => {
+            right_stars = parseInt(right.stargazers_count);
+            document.getElementById('left-title').textContent = left.name;
+            document.getElementById('left-image').src = left.image_url;
+            document.getElementById('left-description').textContent = left.description || "No description provided.";
+            document.getElementById('left-count').textContent = left.stargazers_count;
+
+            document.getElementById('right-title').textContent = right.name;
+            document.getElementById('right-image').src = right.image_url;
+            document.getElementById('right-description').textContent = right.description || "No description provided.";
+        });
+    }
+
+    // Update the user's score in the cookie
+    function updateScore() {
+        document.cookie = 'score=' + score;
+    }
+
+    // Fetch two repositories and update the UI
+    function fetchItems() {
+        const left = getRepo();
+        const right = getRepo();
+        updateUI(left, right);
+    }
+
+    async function fetchInitItems() {
+        const newItems = await fetchRandomRepo(2);
+        const left = newItems[0];
+        const right = newItems[1];
+        updateUI(left, right);
+    }
+
+    // Check user's guess
+    async function evaluateVote(caller) {
+        const left = {
+            name: document.getElementById('left-title').textContent,
+            stargazers_count: parseInt(document.getElementById('left-count').textContent),
+            description: document.getElementById('left-description').textContent,
+            image_url: document.getElementById('left-image').src
+        };
+        const right = {
+            name: document.getElementById('right-title').textContent,
+            stargazers_count: right_stars,
+            description: document.getElementById('right-description').textContent,
+            image_url: document.getElementById('right-image').src
+        }
+
+        if ((right.stargazers_count < left.stargazers_count) && (caller === 'lower') ||
+            (right.stargazers_count > left.stargazers_count) && (caller === 'higher')) {
+            score++;
+            updateScore();
+            updateUI(right, getRepo());
+        } else {
+            // Reset score and show a message if the user guessed incorrectly
+            document.getElementById("final_score").innerText = score;
+            score = 0;
+            updateScore();
+            showModal();
+            fetchItems();
+        }
+        updateCurrentScoreDisplay();
+    }
+
+    // Animate the switch between repositories
+    function animateSwitch(direction, callback) {
+        const leftContainer = document.getElementById('left-container');
+        const rightContainer = document.getElementById('right-container');
+
+        if (direction === 'left') {
+            leftContainer.classList.add('hide-left');
+            rightContainer.classList.add('hide-right');
+        } else {
+            leftContainer.classList.add('hide-right');
+            rightContainer.classList.add('hide-left');
+        }
+
+        setTimeout(() => {
+            leftContainer.classList.remove('hide-left', 'hide-right');
+            rightContainer.classList.remove('hide-left', 'hide-right');
+
+            callback();
+        }, 500);
+    }
+
+    // Displays an overlay for the user to submit their score to the leaderboard
+    function showModal() {
+        document.getElementById('modal').classList.remove('hidden');
+    }
+
+    const submit = document.getElementById("submit");
+    submit.addEventListener("click", async () => {
+        const name = document.getElementById("name").value;
+        const streak = parseInt(document.getElementById("final_score").innerText);
+        // Send a POST request with the name and score
+        await fetch('/insert_to_leaderboard/github', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({"name": name, "streak": streak}),
+        });
+        console.log(JSON.stringify({"name": name, "streak": streak}));
+        console.log("sent");
+        // Hide the modal and reset the form
+        document.getElementById('modal').classList.add('hidden');
+
+    });
+
+    function updateCurrentScoreDisplay() {
+        document.getElementById('current-score').textContent = score;
+    }
+
+    function returnToMainMenu() {
+        window.location.href = "/";
+    }
+
+    function hideModal() {
+        document.getElementById('modal').classList.add('hidden');
+    }
+
+    const closeModalButton = document.getElementById("close-modal");
+    closeModalButton.addEventListener("click", () => {
+        hideModal();
+    });
+
+    fillQueue();
+    // TODO: fetch initial items from server, instead of template
+    //fetchInitItems()
+
+
+</script>
+</body>
+</html>
+

@@ -1,0 +1,60 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: ''
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        toolchain: [stable]
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+
+      - name: Use Rust Cache
+        if: ${{ runner.os == 'Linux' }}
+        uses: Swatinem/rust-cache@v2.0.1
+
+      - name: Install Python zig toolchain
+        run: pip3 install ziglang
+
+      - name: Install lambda
+        run: cargo install cargo-lambda
+
+      - name: Run cargo check --all-targets w/ -D warnings
+        run: cargo check --all-targets
+
+      - name: Run lamdba build
+        run: cargo lambda build --release
+
+      - name: Rename Binary to Aloha
+        run: |
+          cd target/lambda
+          mv aloha Aloha
+
+      - name: Release lambda
+        run: |
+          pip install cargo-lambda
+          cargo lambda build --release
+          cargo lambda deploy Aloha --iam-role ${{ secrets.AWS_IAM_ROLE }}
+        env:
+            AWS_DEFAULT_REGION: eu-central-1
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

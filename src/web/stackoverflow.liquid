@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Github Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #f6f8fa;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff4da6, 0 0 30px #ff4da6, 0 0 40px #ff4da6;
+            animation: breathing 6s ease-in-out infinite;
+        }
+
+        .game-button {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .game-button:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes breathing {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .repo-container {
+            transition: all 0.5s ease-in-out;
+            opacity: 1;
+        }
+
+        .repo-container.hide-left {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        .repo-container.hide-right {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        .overlay {
+            position: absolute;
+            z-index: 2;
+            backdrop-filter: blur(5px);
+            top: 67%;
+            left: 39%;
+        }
+
+        .modal {
+            z-index: 3;
+        }
+
+        .main-menu-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            background-color: #ff4da6;
+        }
+
+        .main-menu-button:hover {
+            background-color: #ffffff;
+            color: #6B21A8;
+        }
+
+
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600">
+<div class="container mx-auto px-4 py-12 relative">
+    <button id="main-menu"
+            class="main-menu-button absolute top-0 left-0 mt-2 ml-2 text-white text-xl py-2 px-4 rounded-lg"
+            onclick="returnToMainMenu()">Main Menu
+    </button>
+    <div class="absolute top-0 right-0 mt-4 mr-4 text-white text-2xl">
+        <span id="current-score">0</span> Points
+    </div>
+    <img src="https://cdn.sstatic.net/Sites/stackoverflow/company/Img/logos/so/so-logo.png?v=9c558ec15d8a"
+         alt="Stack Overflow Logo"
+         class="absolute top-0 right-0 opacity-10 w-32 md:w-64" style="z-index: -1;">
+    <h1 class="text-4xl font-bold my-8 text-center text-white glow-text">Stackoverflow Game</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Known Post -->
+        <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center repo-container"
+             id="left-container">
+            <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold mb-4 text-white" id="left-title">{{ left.title }}</h2>
+                <p class="mb-4 text-white" id="left-description">Number of comments: {{ left.comments }}</p>
+                <!-- Known up-vote count -->
+                <div class="bg-white px-3 py-1 rounded-lg">
+                    <span class="text-xl font-semibold text-purple-600"
+                          id="left-count">{{ left.score }}</span> Up-Votes
+                </div>
+            </div>
+        </div>
+        <!-- Post to be guessed -->
+        <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center repo-container"
+             id="right-container">
+            <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg p-6 shadow-lg flex flex-col items-center">
+                <h2 class="text-2xl font-semibold mb-4 text-white" id="right-title">{{ right.title }}</h2>
+                <p class="mb-4 text-white" id="right-description">Number of comments: {{ right.comments }}</p>
+                <!-- Higher/Lower buttons -->
+                <div class="flex space-x-4">
+                    <button class="game-button bg-white text-purple-600 px-6 py-2 rounded font-bold"
+                            onclick="evaluateVote('higher')">Higher
+                    </button>
+                    <button class="game-button bg-white text-purple-600 px-6 py-2 rounded font-bold"
+                            onclick="evaluateVote('lower')">Lower
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End of Game Overlay -->
+<div class="modal fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden" id="modal">
+    <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg p-8 w-11/12 md:w-2/5 relative">
+            <button id="close-modal"
+                    class="absolute top-0 right-0 mt-2 mr-2 bg-purple-600 text-white px-2 py-1 rounded font-bold">X
+            </button>
+            <h2 class="text-xl font-bold mb-4">Incorrect! Your score has been reset.</h2>
+            <p class="mb-4">Enter your name to submit your score:</p>
+            <p id="final_score"></p>
+            <input id="name" type="text" name="name" placeholder="Your name"
+                   class="border-2 border-gray-300 rounded w-full py-2 px-3 mb-4" required>
+            <button id="submit" class="bg-purple-600 text-white px-6 py-2 rounded font-bold">Submit</button>
+
+        </div>
+    </div>
+</div>
+
+<script>
+
+    let score = 0;
+    let stackoverflow_score = parseInt("{{ right.score }}");
+    main();
+
+    function main() {
+        // Parse the data from liquid template
+        const leftTitle = document.getElementById('left-title');
+        leftTitle.textContent = decodeHtml(leftTitle.textContent);
+
+        const rightTitle = document.getElementById('right-title');
+        rightTitle.textContent = decodeHtml(rightTitle.textContent);
+    }
+
+    class PostQueue {
+        constructor() {
+            this.queue = [];
+        }
+
+        enqueue(post) {
+            this.queue.push(post);
+        }
+
+        dequeue() {
+            return this.queue.shift();
+        }
+
+        peek() {
+            return this.queue[0];
+        }
+
+        isEmpty() {
+            return this.queue.length === 0;
+        }
+
+        size() {
+            return this.queue.length;
+        }
+    }
+
+    const postQueue = new PostQueue();
+
+    // Fetch return a repo from the queue and fill it with a new one
+    function getPost() {
+        if (postQueue.size() <= 3) {
+            fillQueue();
+        }
+        return postQueue.dequeue();
+    }
+
+    // Fill the queue with 10 new repositories
+    function fillQueue(count = 10) {
+        fetchRandomPost(count).then(data => {
+            data.forEach(post => {
+                postQueue.enqueue(post);
+            });
+        });
+    }
+
+    // Fetch a random GitHub repository
+    async function fetchRandomPost(count = 1) {
+        let list = [];
+        await fetch("/random-stackoverflow-thread?count=" + count)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(post => {
+                    list.push(post);
+                });
+            });
+        return list;
+    }
+
+    // Update the UI with new repositories
+    function updateUI(left, right) {
+        animateSwitch(left.score < right.score ? 'left' : 'right', () => {
+            stackoverflow_score = parseInt(right.score);
+            document.getElementById('left-title').textContent = decodeHtml(left.title);
+            document.getElementById('left-description').textContent = left.comments || "No comments provided.";
+            document.getElementById('left-count').textContent = left.score;
+
+            document.getElementById('right-title').textContent = decodeHtml(right.title);
+            document.getElementById('right-description').textContent = right.comments || "No comments provided.";
+        });
+    }
+
+    // Update the user's score in the cookie
+    function updateScore() {
+        document.cookie = 'score=' + score;
+    }
+
+    // Fetch two repositories and update the UI
+    function fetchItems() {
+        const left = getPost();
+        const right = getPost();
+        updateUI(left, right);
+    }
+
+    async function fetchInitItems() {
+        const newItems = await fetchRandomPost(2);
+        const left = newItems[0];
+        const right = newItems[1];
+        updateUI(left, right);
+    }
+
+    // Check user's guess
+    async function evaluateVote(caller) {
+        const left = {
+            title: document.getElementById('left-title').textContent,
+            score: parseInt(document.getElementById('left-count').textContent),
+            comments: document.getElementById('left-description').textContent,
+        };
+        const right = {
+            title: document.getElementById('right-title').textContent,
+            score: stackoverflow_score,
+            comments: document.getElementById('right-description').textContent,
+        }
+
+        if ((right.score < left.score) && (caller === 'lower') ||
+            (right.score > left.score) && (caller === 'higher')) {
+            score++;
+            updateScore();
+            updateUI(right, getPost());
+        } else {
+            // Reset score and show a message if the user guessed incorrectly
+            document.getElementById("final_score").innerText = score;
+            score = 0;
+            updateScore();
+            showModal();
+            fetchItems();
+        }
+        updateCurrentScoreDisplay();
+    }
+
+    // Animate the switch between repositories
+    function animateSwitch(direction, callback) {
+        const leftContainer = document.getElementById('left-container');
+        const rightContainer = document.getElementById('right-container');
+
+        if (direction === 'left') {
+            leftContainer.classList.add('hide-left');
+            rightContainer.classList.add('hide-right');
+        } else {
+            leftContainer.classList.add('hide-right');
+            rightContainer.classList.add('hide-left');
+        }
+
+        setTimeout(() => {
+            leftContainer.classList.remove('hide-left', 'hide-right');
+            rightContainer.classList.remove('hide-left', 'hide-right');
+
+            callback();
+        }, 500);
+    }
+
+    // Displays an overlay for the user to submit their score to the leaderboard
+    function showModal() {
+        document.getElementById('modal').classList.remove('hidden');
+    }
+
+    const submit = document.getElementById("submit");
+    submit.addEventListener("click", async () => {
+        const name = document.getElementById("name").value;
+        const streak = parseInt(document.getElementById("final_score").innerText);
+        // Send a POST request with the name and score
+        await fetch('/insert_to_leaderboard/stackoverflow', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({"name": name, "streak": streak}),
+        });
+        console.log(JSON.stringify({"name": name, "streak": streak}));
+        console.log("sent");
+        // Hide the modal and reset the form
+        document.getElementById('modal').classList.add('hidden');
+
+    });
+
+    function updateCurrentScoreDisplay() {
+        document.getElementById('current-score').textContent = score;
+    }
+
+    function returnToMainMenu() {
+        window.location.href = "/";
+    }
+
+    function hideModal() {
+        document.getElementById('modal').classList.add('hidden');
+    }
+
+    const closeModalButton = document.getElementById("close-modal");
+    closeModalButton.addEventListener("click", () => {
+        hideModal();
+    });
+
+    fillQueue();
+
+    // For some reason, javascript does not have a native way to parse strings with HTML entities
+    // This function utilizes the browser's DOM to parse the string
+    // https://stackoverflow.com/questions/5796718/html-entity-decode
+    // The advantage of this method is that it does not require any external libraries or regex
+    function decodeHtml(html) {
+        let txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    }
+
+    // TODO: fetch initial items from server, instead of template
+    //fetchInitItems()
+
+</script>
+</body>
+</html>
+
